@@ -1,5 +1,5 @@
 // Meteor.jsx
-import { useRef, useMemo } from "react";
+import { useRef, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
@@ -11,18 +11,23 @@ function randomVector3(range = 5) {
   );
 }
 
-export function Meteor() {
+export function Meteor({ onHit }) {
   const meteorRef = useRef();
 
-  const position = useMemo(() => randomVector3(5), []);
-  const rotationSpeed = useMemo(
-    () => new THREE.Vector3(Math.random(), Math.random(), Math.random()),
-    []
+  // Tạo meteor mới mỗi lần reset
+  useEffect(() => {
+    if (meteorRef.current) {
+      meteorRef.current.position.copy(randomVector3(5));
+    }
+  }, []);
+
+  const rotationSpeed = new THREE.Vector3(
+    Math.random(),
+    Math.random(),
+    Math.random()
   );
 
-  const geometry = useMemo(() => {
-    return new THREE.IcosahedronGeometry(0.3 + Math.random() * 0.3, 1);
-  }, []);
+  const geometry = new THREE.IcosahedronGeometry(0.3 + Math.random() * 0.3, 1);
 
   useFrame((state, delta) => {
     if (meteorRef.current) {
@@ -34,11 +39,19 @@ export function Meteor() {
       if (meteorRef.current.position.y < -1) {
         meteorRef.current.position.copy(randomVector3(5));
       }
+
+      // Kiểm tra va chạm với xe (ở vị trí (x, y, z) tạm thời)
+      const carPos = new THREE.Vector3(-1.5, 0.5, 3);
+      const distance = meteorRef.current.position.distanceTo(carPos);
+      if (distance < 0.7) {
+        onHit(); // Gọi hàm báo va chạm
+        meteorRef.current.position.copy(randomVector3(5));
+      }
     }
   });
 
   return (
-    <mesh ref={meteorRef} position={position} geometry={geometry}>
+    <mesh ref={meteorRef} geometry={geometry}>
       <meshStandardMaterial color="brown" flatShading />
     </mesh>
   );
