@@ -1,4 +1,3 @@
-// Scene.jsx
 import {
   Environment,
   OrbitControls,
@@ -16,31 +15,37 @@ export function Scene({ bg, setScore }) {
   const [thirdPerson, setThirdPerson] = useState(false);
   const [cameraPosition, setCameraPosition] = useState([-6, 3.9, 6.21]);
 
-  const chassisApiRef = useRef(null); // Đây là API từ useBox
+  const chassisApiRef = useRef(null); // ✅ Để truyền nguyên ref
   const meteorHitRef = useRef(false);
   const scoreRef = useRef(0);
 
-  useScore(chassisApiRef.current, meteorHitRef, (newScore) => {
+  // ✅ Nhận lại resetScore từ hook
+  const { resetScore } = useScore(chassisApiRef, meteorHitRef, (newScore) => {
     scoreRef.current = newScore;
     setScore(newScore);
   });
 
-  useFrame(() => {
-    console.log("Current score:", scoreRef.current);
-  });
-
+  // ✅ Reset điểm khi nhấn "r"
   useEffect(() => {
-    function keydownHandler(e) {
-      if (e.key == "k") {
+    const handleKeyDown = (e) => {
+      if (e.key === "r") {
+        resetScore();
+      } else if (e.key === "k") {
+        // camera toggle
         if (thirdPerson)
           setCameraPosition([-6, 3.9, 6.21 + Math.random() * 0.01]);
-        setThirdPerson(!thirdPerson);
+        setThirdPerson((prev) => !prev);
       }
-    }
+    };
 
-    window.addEventListener("keydown", keydownHandler);
-    return () => window.removeEventListener("keydown", keydownHandler);
-  }, [thirdPerson]);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [thirdPerson, resetScore]);
+
+  // Debug điểm
+  useFrame(() => {
+    // console.log("Current score:", scoreRef.current);
+  });
 
   return (
     <Suspense fallback={null}>
